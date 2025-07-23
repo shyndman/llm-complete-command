@@ -8,13 +8,13 @@ https://github.com/user-attachments/assets/c10d7a0f-48c3-4904-bb1b-4a1ce9f9ff8d
 
 Install this plugin in the same environment as [LLM](https://llm.datasette.io/).
 ```bash
-llm install llm-cmd-comp
+llm install llm-complete-command
 ```
 Then install the shell integration for your preferred shell.
 
-- **Fish**: place `share/llm-cmd-comp.fish` in `~/.config/fish/conf.d/`.
-- **Zsh**: source `share/llm-cmd-comp.zsh` in your `~/.zshrc`.
-- **Bash**: source `share/llm-cmd-comp.bash` in your `~/.bashrc`.
+- **Fish**: place `share/llm-complete-command.fish` in `~/.config/fish/conf.d/`.
+- **Zsh**: source `share/llm-complete-command.zsh` in your `~/.zshrc`.
+- **Bash**: source `share/llm-complete-command.bash` in your `~/.bashrc`.
 
 ## Usage
 

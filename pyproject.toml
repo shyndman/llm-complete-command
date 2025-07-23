@@ -1,22 +1,30 @@
 [project]
-name = "llm-cmd-comp"
-version = "1.1.1"
+name = "llm-complete-command"
+version = "2.0.0"
 description = "Use LLM to generate commands for your shell"
 readme = "README.md"
-authors = [{name = "Ryan Patterson"}]
+authors = [{name = "Ryan Patterson"},{name = "Scott Hyndman"}]
 license = {text = "Apache-2.0"}
-classifiers = [
-    "License :: OSI Approved :: Apache Software License"
-]
+classifiers = ["License :: OSI Approved :: Apache Software License"]
 dependencies = [
     "llm",
+    "loguru>=0.7.3",
     "prompt_toolkit>=3.0.43",
+    "rich>=14.0.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/CGamesPlay/llm-cmd-comp"
-Changelog = "https://github.com/CGamesPlay/llm-cmd-comp/releases"
-Issues = "https://github.com/CGamesPlay/llm-cmd-comp/issues"
+Homepage = "https://github.com/shyndman/llm-complete-command"
+Changelog = "https://github.com/shyndman/llm-complete-command/releases"
+Issues = "https://github.com/shyndman/llm-complete-command/issues"
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
 [project.entry-points.llm]
-cmdcomp = "llm_cmd_comp"
+complete_command = "llm_complete_command"
+
+[tool.pyright]
+include = ["."]
+ignore = [".venv"]
