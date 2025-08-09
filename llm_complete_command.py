@@ -81,8 +81,6 @@ def register_commands(cli):
 
         prompt = " ".join(args)
 
-        logger.debug(prompt)
-
         model_id = model or get_default_model()
         model_obj = llm.get_model(model_id)
         if model_obj.needs_key:
