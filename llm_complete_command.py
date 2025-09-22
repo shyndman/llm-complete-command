@@ -1,6 +1,7 @@
 import os
 import platform
 import string
+import subprocess
 import textwrap
 
 import click
@@ -96,15 +97,36 @@ def render_default_prompt():
     )
 
 
-def interactive_exec(conversation, command, system):
+def add_to_zsh_history(original_input):
+    """Add the original input to zsh history if zsh is available."""
+    try:
+        # Check if zsh is available
+        result = subprocess.run(['which', 'zsh'], capture_output=True, text=True)
+        if result.returncode != 0:
+            return False
+
+        # Add the original input to zsh history
+        zsh_cmd = f'zsh -c "print -s {repr(original_input)}"'
+        subprocess.run(zsh_cmd, shell=True)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to add to zsh history: {e}")
+        return False
+
+
+def interactive_exec(conversation, prompt, system):
     ttyin = create_input(always_prefer_tty=True)
     ttyout = create_output(always_prefer_tty=True)
     session = PromptSession(input=ttyin, output=ttyout)
     system = system or SYSTEM_PROMPT
 
+    # Add the original input to zsh history and print the generated command
+    # (useful when we want to make changes))
+    add_to_zsh_history(prompt)
+
     try:
-        command = conversation.prompt(
-            command,
+        generated_command = conversation.prompt(
+            prompt,
             system=system,
             temperature=0.25,
             top_p=0.88,
@@ -113,19 +135,20 @@ def interactive_exec(conversation, command, system):
             with Progress(transient=True) as progress:
                 _task = progress.add_task("Working", total=None)
                 ttyout.write("$ ")
-                for chunk in command:
+                for chunk in generated_command:
                     ttyout.write(chunk.replace("\n", "\n> "))
-                command = command.text()
+                generated_command = generated_command.text()
             ttyout.write("\n# Provide revision instructions; leave blank to finish\n")
             feedback = session.prompt("> ")
             if feedback == "":
                 break
-            command = conversation.prompt(
+            generated_command = conversation.prompt(
                 feedback,
                 system=system,
                 temperature=0.25,
                 top_p=0.88,
             )
-        print(command)
+
+        print(generated_command)
     except Exception:
         logger.exception("an error occured during processing")
