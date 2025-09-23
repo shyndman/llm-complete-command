@@ -129,7 +129,6 @@ def interactive_exec(conversation, prompt, system):
             prompt,
             system=system,
             temperature=0.25,
-            top_p=0.88,
         )
         while True:
             with Progress(transient=True) as progress:
