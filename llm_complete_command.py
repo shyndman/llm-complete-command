@@ -1,5 +1,6 @@
 import os
 import platform
+import shlex
 import string
 import subprocess
 import textwrap
@@ -105,8 +106,9 @@ def add_to_zsh_history(original_input):
         if result.returncode != 0:
             return False
 
-        # Add the original input to zsh history
-        zsh_cmd = f'zsh -c "print -s {repr(original_input)}"'
+        # Add the original input to zsh history using proper shell escaping
+        escaped_input = shlex.quote(original_input)
+        zsh_cmd = f'zsh -c "print -s {escaped_input}"'
         subprocess.run(zsh_cmd, shell=True)
         return True
     except Exception as e:
