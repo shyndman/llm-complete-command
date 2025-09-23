@@ -147,7 +147,6 @@ def interactive_exec(conversation, prompt, system):
                 feedback,
                 system=system,
                 temperature=0.25,
-                top_p=0.88,
             )
 
         print(generated_command)
