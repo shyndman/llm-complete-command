@@ -8,6 +8,7 @@ import textwrap
 import click
 import llm
 from loguru import logger
+from model_capabilities_cache import get_model_capability, set_model_capability
 from prompt_toolkit import PromptSession
 from prompt_toolkit.input import create_input
 from prompt_toolkit.output import create_output
@@ -69,6 +70,11 @@ SYSTEM_PROMPT = string.Template(
 """).strip()
 )
 
+DEFAULT_TEMPERATURE = 0.25
+TEMPERATURE_PARAM = "temperature"
+UNSUPPORTED_VALUE_CODE = "unsupported_value"
+SUPPORTS_TEMPERATURE_CAPABILITY = "supports_temperature"
+
 
 @llm.hookimpl
 def register_commands(cli):
@@ -102,7 +108,7 @@ def add_to_zsh_history(original_input):
     """Add the original input to zsh history if zsh is available."""
     try:
         # Check if zsh is available
-        result = subprocess.run(['which', 'zsh'], capture_output=True, text=True)
+        result = subprocess.run(["which", "zsh"], capture_output=True, text=True)
         if result.returncode != 0:
             return False
 
@@ -116,38 +122,88 @@ def add_to_zsh_history(original_input):
         return False
 
 
+def _is_unsupported_temperature_error(error: Exception) -> bool:
+    return (
+        getattr(error, "param", None) == TEMPERATURE_PARAM
+        and getattr(error, "code", None) == UNSUPPORTED_VALUE_CODE
+    )
+
+
+def _prompt_with_temperature(
+    conversation, prompt: str, system: str, use_temperature: bool
+):
+    prompt_kwargs: dict[str, object] = {"system": system}
+    if use_temperature:
+        prompt_kwargs[TEMPERATURE_PARAM] = DEFAULT_TEMPERATURE
+    return conversation.prompt(prompt, **prompt_kwargs)
+
+
+def _generate_command_text(conversation, prompt: str, system: str, write_chunk) -> str:
+    model_id = conversation.model.model_id
+    supports_temperature = get_model_capability(
+        model_id, SUPPORTS_TEMPERATURE_CAPABILITY
+    )
+    should_try_temperature = supports_temperature is not False
+
+    response = _prompt_with_temperature(
+        conversation, prompt, system, use_temperature=should_try_temperature
+    )
+    chunks = []
+
+    try:
+        for chunk in response:
+            write_chunk(chunk)
+            chunks.append(chunk)
+    except Exception as error:
+        if (
+            should_try_temperature
+            and not chunks
+            and _is_unsupported_temperature_error(error)
+        ):
+            set_model_capability(model_id, SUPPORTS_TEMPERATURE_CAPABILITY, False)
+            response = _prompt_with_temperature(
+                conversation, prompt, system, use_temperature=False
+            )
+            for chunk in response:
+                write_chunk(chunk)
+                chunks.append(chunk)
+        else:
+            raise
+    else:
+        if should_try_temperature and supports_temperature is None:
+            set_model_capability(model_id, SUPPORTS_TEMPERATURE_CAPABILITY, True)
+
+    return "".join(chunks)
+
+
 def interactive_exec(conversation, prompt, system):
     ttyin = create_input(always_prefer_tty=True)
     ttyout = create_output(always_prefer_tty=True)
     session = PromptSession(input=ttyin, output=ttyout)
-    system = system or SYSTEM_PROMPT
+    system = system or render_default_prompt()
 
     # Add the original input to zsh history and print the generated command
     # (useful when we want to make changes))
     add_to_zsh_history(prompt)
 
     try:
-        generated_command = conversation.prompt(
-            prompt,
-            system=system,
-            temperature=0.25,
-        )
+        current_prompt = prompt
+        generated_command = ""
         while True:
             with Progress(transient=True) as progress:
                 _task = progress.add_task("Working", total=None)
                 ttyout.write("$ ")
-                for chunk in generated_command:
-                    ttyout.write(chunk.replace("\n", "\n> "))
-                generated_command = generated_command.text()
+                generated_command = _generate_command_text(
+                    conversation,
+                    current_prompt,
+                    system,
+                    write_chunk=lambda chunk: ttyout.write(chunk.replace("\n", "\n> ")),
+                )
             ttyout.write("\n# Provide revision instructions; leave blank to finish\n")
             feedback = session.prompt("> ")
             if feedback == "":
                 break
-            generated_command = conversation.prompt(
-                feedback,
-                system=system,
-                temperature=0.25,
-            )
+            current_prompt = feedback
 
         print(generated_command)
     except Exception:

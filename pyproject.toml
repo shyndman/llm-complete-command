@@ -9,6 +9,7 @@ classifiers = ["License :: OSI Approved :: Apache Software License"]
 dependencies = [
     "llm",
     "loguru>=0.7.3",
+    "platformdirs>=4.5.1",
     "prompt_toolkit>=3.0.43",
     "rich>=14.0.0",
 ]
@@ -28,3 +29,8 @@ complete_command = "llm_complete_command"
 [tool.pyright]
 include = ["."]
 ignore = [".venv"]
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.37.4",
+]
