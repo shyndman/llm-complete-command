@@ -7,6 +7,7 @@ authors = [{name = "Ryan Patterson"},{name = "Scott Hyndman"}]
 license = {text = "Apache-2.0"}
 classifiers = ["License :: OSI Approved :: Apache Software License"]
 dependencies = [
+    "better-exceptions>=0.3.3",
     "llm",
     "loguru>=0.7.3",
     "platformdirs>=4.5.1",

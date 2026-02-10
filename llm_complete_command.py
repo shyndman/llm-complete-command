@@ -5,6 +5,7 @@ import string
 import subprocess
 import textwrap
 
+import better_exceptions
 import click
 import llm
 from loguru import logger
@@ -13,6 +14,9 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.input import create_input
 from prompt_toolkit.output import create_output
 from rich.progress import Progress
+
+
+better_exceptions.MAX_LENGTH = None
 
 
 def get_ubuntu_version():
@@ -74,6 +78,13 @@ DEFAULT_TEMPERATURE = 0.25
 TEMPERATURE_PARAM = "temperature"
 UNSUPPORTED_VALUE_CODE = "unsupported_value"
 SUPPORTS_TEMPERATURE_CAPABILITY = "supports_temperature"
+
+
+class ResponseStreamError(Exception):
+    def __init__(self, original: Exception, emitted_chunks: int):
+        super().__init__(str(original))
+        self.original = original
+        self.emitted_chunks = emitted_chunks
 
 
 @llm.hookimpl
@@ -138,42 +149,54 @@ def _prompt_with_temperature(
     return conversation.prompt(prompt, **prompt_kwargs)
 
 
-def _generate_command_text(conversation, prompt: str, system: str, write_chunk) -> str:
-    model_id = conversation.model.model_id
-    supports_temperature = get_model_capability(
-        model_id, SUPPORTS_TEMPERATURE_CAPABILITY
-    )
-    should_try_temperature = supports_temperature is not False
-
-    response = _prompt_with_temperature(
-        conversation, prompt, system, use_temperature=should_try_temperature
-    )
+def _collect_response_text(response, write_chunk) -> str:
     chunks = []
-
     try:
         for chunk in response:
             write_chunk(chunk)
             chunks.append(chunk)
     except Exception as error:
-        if (
-            should_try_temperature
-            and not chunks
-            and _is_unsupported_temperature_error(error)
-        ):
+        raise ResponseStreamError(error, len(chunks)) from error
+    return "".join(chunks)
+
+
+def _should_retry_without_temperature(
+    stream_error: ResponseStreamError, use_temperature: bool
+) -> bool:
+    return (
+        use_temperature
+        and stream_error.emitted_chunks == 0
+        and _is_unsupported_temperature_error(stream_error.original)
+    )
+
+
+def _generate_command_text(conversation, prompt: str, system: str, write_chunk) -> str:
+    model_id = conversation.model.model_id
+    supports_temperature = get_model_capability(
+        model_id, SUPPORTS_TEMPERATURE_CAPABILITY
+    )
+    use_temperature = supports_temperature is not False
+
+    response = _prompt_with_temperature(
+        conversation, prompt, system, use_temperature=use_temperature
+    )
+
+    try:
+        generated_text = _collect_response_text(response, write_chunk)
+    except ResponseStreamError as stream_error:
+        if _should_retry_without_temperature(stream_error, use_temperature):
             set_model_capability(model_id, SUPPORTS_TEMPERATURE_CAPABILITY, False)
             response = _prompt_with_temperature(
                 conversation, prompt, system, use_temperature=False
             )
-            for chunk in response:
-                write_chunk(chunk)
-                chunks.append(chunk)
-        else:
-            raise
-    else:
-        if should_try_temperature and supports_temperature is None:
-            set_model_capability(model_id, SUPPORTS_TEMPERATURE_CAPABILITY, True)
+            return _collect_response_text(response, write_chunk)
 
-    return "".join(chunks)
+        raise stream_error.original from stream_error.original
+
+    if use_temperature and supports_temperature is None:
+        set_model_capability(model_id, SUPPORTS_TEMPERATURE_CAPABILITY, True)
+
+    return generated_text
 
 
 def interactive_exec(conversation, prompt, system):
@@ -207,4 +230,4 @@ def interactive_exec(conversation, prompt, system):
 
         print(generated_command)
     except Exception:
-        logger.exception("an error occured during processing")
+        logger.exception("an error occurred during processing")
