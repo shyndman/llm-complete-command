@@ -9,6 +9,7 @@ from .environment_config import load_effective_environment
 from loguru import logger
 from .model_capabilities_cache import get_model_capability, set_model_capability
 from prompt_toolkit import PromptSession
+from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.input import create_input
 from prompt_toolkit.output import create_output
 from .system_prompt import build_system_prompt
@@ -21,6 +22,31 @@ DEFAULT_TEMPERATURE = 0.25
 TEMPERATURE_PARAM = "temperature"
 UNSUPPORTED_VALUE_CODE = "unsupported_value"
 SUPPORTS_TEMPERATURE_CAPABILITY = "supports_temperature"
+ANSI_RESET = "\x1b[0m"
+COMMAND_PROMPT_COLOR_HEX = "#31748f"
+FEEDBACK_PROMPT_COLOR_HEX = "#73628a"
+
+
+def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
+    cleaned = hex_color.lstrip("#")
+    return (int(cleaned[0:2], 16), int(cleaned[2:4], 16), int(cleaned[4:6], 16))
+
+
+def _truecolor_escape(hex_color: str) -> str:
+    red, green, blue = _hex_to_rgb(hex_color)
+    return f"\x1b[38;2;{red};{green};{blue}m"
+
+
+def _colorize_prompt_symbol(symbol: str, hex_color: str) -> str:
+    return f"{_truecolor_escape(hex_color)}{symbol}{ANSI_RESET} "
+
+
+COMMAND_PROMPT = _colorize_prompt_symbol("$", COMMAND_PROMPT_COLOR_HEX)
+FEEDBACK_PROMPT = _colorize_prompt_symbol(">", FEEDBACK_PROMPT_COLOR_HEX)
+
+
+def _format_generated_chunk(chunk: str) -> str:
+    return chunk.replace("\n", f"\n{FEEDBACK_PROMPT}")
 
 
 class ResponseStreamError(Exception):
@@ -180,15 +206,15 @@ def interactive_exec(conversation, prompt, system):
         current_prompt = prompt
         generated_command = ""
         while True:
-            ttyout.write("$ ")
+            ttyout.write(COMMAND_PROMPT)
             generated_command = _generate_command_text(
                 conversation,
                 current_prompt,
                 system,
-                write_chunk=lambda chunk: ttyout.write(chunk.replace("\n", "\n> ")),
+                write_chunk=lambda chunk: ttyout.write(_format_generated_chunk(chunk)),
             )
             ttyout.write("\n# Provide revision instructions; leave blank to finish\n")
-            feedback = session.prompt("> ")
+            feedback = session.prompt(ANSI(FEEDBACK_PROMPT))
             if feedback == "":
                 break
             current_prompt = feedback

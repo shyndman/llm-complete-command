@@ -1,4 +1,31 @@
+import re
+
 import llm_complete_command as plugin
+
+
+ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _strip_ansi(text: str) -> str:
+    return ANSI_ESCAPE_PATTERN.sub("", text)
+
+
+def test_colorize_prompt_symbol_uses_requested_hex_color():
+    assert (
+        plugin._colorize_prompt_symbol("$", "#31748f")
+        == "\x1b[38;2;49;116;143m$\x1b[0m "
+    )
+    assert (
+        plugin._colorize_prompt_symbol(">", "#73628a")
+        == "\x1b[38;2;115;98;138m>\x1b[0m "
+    )
+
+
+def test_format_generated_chunk_applies_colored_feedback_prefix_for_each_newline():
+    formatted = plugin._format_generated_chunk("line one\nline two\nline three")
+
+    assert formatted.count(plugin.FEEDBACK_PROMPT) == 2
+    assert _strip_ansi(formatted) == "line one\n> line two\n> line three"
 
 
 class _FakeModel:
