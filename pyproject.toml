@@ -2,6 +2,7 @@
 name = "llm-complete-command"
 version = "0.0.0"
 description = "Use LLM to generate commands for your shell"
+requires-python = ">=3.13"
 readme = "README.md"
 authors = [{name = "Ryan Patterson"},{name = "Scott Hyndman"}]
 license = {text = "Apache-2.0"}
