@@ -31,6 +31,10 @@ complete_command = "llm_complete_command"
 [tool.pyright]
 include = ["."]
 ignore = [".venv"]
+exclude = [".venv", ".pytest_cache"]
+pythonVersion = "3.13"
+typeCheckingMode = "standard"
+useLibraryCodeForTypes = true
 
 [dependency-groups]
 dev = [
