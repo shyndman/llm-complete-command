@@ -20,7 +20,8 @@ TEXT_SIZING_DETECTION_TIMEOUT_SECONDS = 0.1
 CPR_QUERY = "\x1b[6n"
 OSC_TERMINATOR = "\x07"
 CPR_RESPONSE_PATTERN = re.compile(rb"\x1b\[(\d+);(\d+)R")
-STATUS_SEPARATOR = " · "
+STATUS_MARKER = "·"
+STATUS_MODEL_ELAPSED_SEPARATOR = "  "
 
 _text_sizing_scale_support_cache: bool | None = None
 
@@ -174,16 +175,17 @@ class ThinkingSpinner:
         elapsed_text = f"{elapsed_seconds:.1f}s".rjust(ELAPSED_TIME_FIELD_WIDTH)
         elapsed_color = _elapsed_color_escape(elapsed_seconds)
 
+        status_prefix = (
+            f"{STATUS_MARKER} {self._model_name} {STATUS_MARKER}"
+            f"{STATUS_MODEL_ELAPSED_SEPARATOR}"
+        )
+
         if not self._use_fractional_status_text:
-            return (
-                f"thinking{STATUS_SEPARATOR}{elapsed_color}{elapsed_text}{ANSI_RESET}"
-                f"{STATUS_SEPARATOR}{self._model_name}"
-            )
+            return f"{status_prefix}{elapsed_color}{elapsed_text}{ANSI_RESET}"
 
         return (
-            f"{_osc66_fractional_scale(f'thinking{STATUS_SEPARATOR}')}"
+            f"{_osc66_fractional_scale(status_prefix)}"
             f"{elapsed_color}{_osc66_fractional_scale(elapsed_text)}{ANSI_RESET}"
-            f"{_osc66_fractional_scale(f'{STATUS_SEPARATOR}{self._model_name}')}"
         )
 
     def _update_text_loop(self) -> None:
