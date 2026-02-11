@@ -1,5 +1,3 @@
-import shlex
-import subprocess
 from typing import Callable
 
 import better_exceptions
@@ -92,24 +90,6 @@ def register_commands(cli):
 def render_default_prompt():
     environment = load_effective_environment()
     return build_system_prompt(environment)
-
-
-def add_to_zsh_history(original_input):
-    """Add the original input to zsh history if zsh is available."""
-    try:
-        # Check if zsh is available
-        result = subprocess.run(["which", "zsh"], capture_output=True, text=True)
-        if result.returncode != 0:
-            return False
-
-        # Add the original input to zsh history using proper shell escaping
-        escaped_input = shlex.quote(original_input)
-        zsh_cmd = f'zsh -c "print -s {escaped_input}"'
-        subprocess.run(zsh_cmd, shell=True)
-        return True
-    except Exception as e:
-        logger.error(f"Failed to add to zsh history: {e}")
-        return False
 
 
 def _is_unsupported_temperature_error(error: Exception) -> bool:
@@ -205,10 +185,6 @@ def interactive_exec(conversation, prompt, system):
     ttyout = create_output(always_prefer_tty=True)
     session = PromptSession(input=ttyin, output=ttyout)
     system = system or render_default_prompt()
-
-    # Add the original input to zsh history and print the generated command
-    # (useful when we want to make changes))
-    add_to_zsh_history(prompt)
 
     try:
         current_prompt = prompt
