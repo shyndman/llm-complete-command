@@ -28,6 +28,41 @@ def test_format_generated_chunk_applies_colored_feedback_prefix_for_each_newline
     assert _strip_ansi(formatted) == "line one\n> line two\n> line three"
 
 
+def test_write_terminal_prefers_write_raw_when_available():
+    class _FakeOutput:
+        def __init__(self):
+            self.write_calls: list[str] = []
+            self.write_raw_calls: list[str] = []
+
+        def write(self, text: str) -> None:
+            self.write_calls.append(text)
+
+        def write_raw(self, text: str) -> None:
+            self.write_raw_calls.append(text)
+
+    output = _FakeOutput()
+
+    plugin._write_terminal(output, "\x1b[38;2;49;116;143m$\x1b[0m ")
+
+    assert output.write_raw_calls == ["\x1b[38;2;49;116;143m$\x1b[0m "]
+    assert output.write_calls == []
+
+
+def test_write_terminal_falls_back_to_write_when_write_raw_missing():
+    class _FakeOutput:
+        def __init__(self):
+            self.write_calls: list[str] = []
+
+        def write(self, text: str) -> None:
+            self.write_calls.append(text)
+
+    output = _FakeOutput()
+
+    plugin._write_terminal(output, "plain")
+
+    assert output.write_calls == ["plain"]
+
+
 class _FakeModel:
     def __init__(self, model_id: str):
         self.model_id = model_id

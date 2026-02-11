@@ -49,6 +49,14 @@ def _format_generated_chunk(chunk: str) -> str:
     return chunk.replace("\n", f"\n{FEEDBACK_PROMPT}")
 
 
+def _write_terminal(output, text: str) -> None:
+    write_raw = getattr(output, "write_raw", None)
+    if callable(write_raw):
+        write_raw(text)
+        return
+    output.write(text)
+
+
 class ResponseStreamError(Exception):
     original: Exception
     emitted_chunks: int
@@ -206,12 +214,14 @@ def interactive_exec(conversation, prompt, system):
         current_prompt = prompt
         generated_command = ""
         while True:
-            ttyout.write(COMMAND_PROMPT)
+            _write_terminal(ttyout, COMMAND_PROMPT)
             generated_command = _generate_command_text(
                 conversation,
                 current_prompt,
                 system,
-                write_chunk=lambda chunk: ttyout.write(_format_generated_chunk(chunk)),
+                write_chunk=lambda chunk: _write_terminal(
+                    ttyout, _format_generated_chunk(chunk)
+                ),
             )
             ttyout.write("\n# Provide revision instructions; leave blank to finish\n")
             feedback = session.prompt(ANSI(FEEDBACK_PROMPT))
