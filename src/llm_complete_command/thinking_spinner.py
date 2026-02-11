@@ -6,6 +6,7 @@ from yaspin import yaspin
 
 
 SPINNER_REFRESH_SECONDS = 0.1
+ELAPSED_TIME_FIELD_WIDTH = 5
 
 
 class ThinkingSpinner:
@@ -43,7 +44,8 @@ class ThinkingSpinner:
 
     def _status_text(self) -> str:
         elapsed_seconds = time.monotonic() - self._started_at
-        return f"thinking | {elapsed_seconds:.1f}s | {self._model_name}"
+        elapsed_text = f"{elapsed_seconds:.1f}s".rjust(ELAPSED_TIME_FIELD_WIDTH)
+        return f"thinking | {elapsed_text} | {self._model_name}"
 
     def _update_text_loop(self) -> None:
         while not self._stop_event.wait(SPINNER_REFRESH_SECONDS):
