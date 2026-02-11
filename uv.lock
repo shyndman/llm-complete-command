@@ -240,7 +240,7 @@ wheels = [
 
 [[package]]
 name = "llm-complete-command"
-version = "2.5.1"
+version = "2.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "better-exceptions" },

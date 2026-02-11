@@ -1,6 +1,6 @@
 [project]
 name = "llm-complete-command"
-version = "2.5.1"
+version = "2.6.0"
 description = "Use LLM to generate commands for your shell"
 requires-python = ">=3.13"
 readme = "README.md"
