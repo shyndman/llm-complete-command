@@ -41,6 +41,16 @@ useLibraryCodeForTypes = true
 [tool.hatch.build.targets.wheel]
 packages = ["src/llm_complete_command"]
 
+[tool.semantic_release]
+build_command = """
+python -m pip install --upgrade uv
+uv lock --upgrade-package "$PACKAGE_NAME"
+git add uv.lock
+"""
+commit_message = "chore(release): {version}"
+tag_format = "v{version}"
+version_toml = ["pyproject.toml:project.version"]
+
 [dependency-groups]
 dev = [
     "basedpyright>=1.37.4",
