@@ -5,14 +5,14 @@ from typing import Callable
 import better_exceptions
 import click
 import llm
-from environment_config import load_effective_environment
+from .environment_config import load_effective_environment
 from loguru import logger
-from model_capabilities_cache import get_model_capability, set_model_capability
+from .model_capabilities_cache import get_model_capability, set_model_capability
 from prompt_toolkit import PromptSession
 from prompt_toolkit.input import create_input
 from prompt_toolkit.output import create_output
-from system_prompt import build_system_prompt
-from thinking_spinner import ThinkingSpinner
+from .system_prompt import build_system_prompt
+from .thinking_spinner import ThinkingSpinner
 
 
 better_exceptions.MAX_LENGTH = None

@@ -22,21 +22,26 @@ Changelog = "https://github.com/shyndman/llm-complete-command/releases"
 Issues = "https://github.com/shyndman/llm-complete-command/issues"
 
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
 
 [project.entry-points.llm]
 complete_command = "llm_complete_command"
 
 [tool.pyright]
-include = ["."]
+include = ["src", "tests"]
 ignore = [".venv"]
 exclude = [".venv", ".pytest_cache"]
+extraPaths = ["src"]
 pythonVersion = "3.13"
 typeCheckingMode = "standard"
 useLibraryCodeForTypes = true
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/llm_complete_command"]
+
 [dependency-groups]
 dev = [
     "basedpyright>=1.37.4",
+    "pytest>=8.4.2",
 ]
