@@ -35,17 +35,20 @@ Neat ways you can use this feature:
 
 ## Development
 
-To set up this plugin locally, first checkout the code. Then create a new virtual environment:
+To set up this plugin locally, first checkout the code. Then install dependencies:
 
 ```bash
-cd llm-cmd
-python3 -m venv venv
-source venv/bin/activate
+uv sync --group dev
 ```
 
-Now install the dependencies and test dependencies:
+Install the plugin in your local LLM environment:
 
 ```bash
-pip install llm
-llm install -e .
+uv run llm install -e .
+```
+
+Run the unit tests:
+
+```bash
+uv run pytest
 ```
