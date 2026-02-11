@@ -38,7 +38,7 @@ def test_status_text_right_aligns_single_digit_elapsed_time(monkeypatch):
     status_text = spinner._status_text()
 
     assert "\x1b[38;2;254;247;247m" in status_text
-    assert _strip_ansi(status_text) == "thinking |  1.5s | test-model"
+    assert _strip_ansi(status_text) == "thinking ·  1.5s · test-model"
 
 
 def test_status_text_keeps_two_digit_elapsed_time_stable(monkeypatch):
@@ -49,7 +49,7 @@ def test_status_text_keeps_two_digit_elapsed_time_stable(monkeypatch):
     status_text = spinner._status_text()
 
     assert "\x1b[38;2;243;131;131m" in status_text
-    assert _strip_ansi(status_text) == "thinking | 25.6s | test-model"
+    assert _strip_ansi(status_text) == "thinking · 25.6s · test-model"
 
 
 def test_cpr_positions_support_scale_requires_width_and_scale_steps():
@@ -109,7 +109,7 @@ def test_status_text_scales_all_text_when_fractional_mode_enabled(monkeypatch):
 
     status_text = spinner._status_text()
 
-    assert "\x1b]66;n=9:d=10;thinking | \x07" in status_text
-    assert "\x1b]66;n=9:d=10; 1.5s\x07" in status_text
-    assert "\x1b]66;n=9:d=10; | test-model\x07" in status_text
-    assert _strip_control_sequences(status_text) == "thinking |  1.5s | test-model"
+    assert "\x1b]66;n=7:d=8;thinking · \x07" in status_text
+    assert "\x1b]66;n=7:d=8; 1.5s\x07" in status_text
+    assert "\x1b]66;n=7:d=8; · test-model\x07" in status_text
+    assert _strip_control_sequences(status_text) == "thinking ·  1.5s · test-model"

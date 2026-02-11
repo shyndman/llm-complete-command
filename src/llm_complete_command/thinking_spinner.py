@@ -14,12 +14,13 @@ ELAPSED_COLOR_TRANSITION_SECONDS = 45.0
 ELAPSED_COLOR_START_RGB = (255, 255, 255)
 ELAPSED_COLOR_END_RGB = (235, 38, 38)
 ANSI_RESET = "\x1b[0m"
-TEXT_SIZING_SCALE_NUMERATOR = 9
-TEXT_SIZING_SCALE_DENOMINATOR = 10
+TEXT_SIZING_SCALE_NUMERATOR = 7
+TEXT_SIZING_SCALE_DENOMINATOR = 8
 TEXT_SIZING_DETECTION_TIMEOUT_SECONDS = 0.1
 CPR_QUERY = "\x1b[6n"
 OSC_TERMINATOR = "\x07"
 CPR_RESPONSE_PATTERN = re.compile(rb"\x1b\[(\d+);(\d+)R")
+STATUS_SEPARATOR = " · "
 
 _text_sizing_scale_support_cache: bool | None = None
 
@@ -174,12 +175,15 @@ class ThinkingSpinner:
         elapsed_color = _elapsed_color_escape(elapsed_seconds)
 
         if not self._use_fractional_status_text:
-            return f"thinking | {elapsed_color}{elapsed_text}{ANSI_RESET} | {self._model_name}"
+            return (
+                f"thinking{STATUS_SEPARATOR}{elapsed_color}{elapsed_text}{ANSI_RESET}"
+                f"{STATUS_SEPARATOR}{self._model_name}"
+            )
 
         return (
-            f"{_osc66_fractional_scale('thinking | ')}"
+            f"{_osc66_fractional_scale(f'thinking{STATUS_SEPARATOR}')}"
             f"{elapsed_color}{_osc66_fractional_scale(elapsed_text)}{ANSI_RESET}"
-            f"{_osc66_fractional_scale(f' | {self._model_name}')}"
+            f"{_osc66_fractional_scale(f'{STATUS_SEPARATOR}{self._model_name}')}"
         )
 
     def _update_text_loop(self) -> None:
