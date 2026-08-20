@@ -3,6 +3,7 @@ import platform
 import shutil
 import subprocess
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -196,10 +197,10 @@ def _run_command(command: list[str]) -> str | None:
     return error_output or None
 
 
-def _safe_probe(probe_function, fallback_value):
+def _safe_probe[T](probe_function: Callable[[], T], fallback_value: T) -> T:
     try:
         return probe_function()
-    except Exception:
+    except (OSError, subprocess.SubprocessError):
         return fallback_value
 
 

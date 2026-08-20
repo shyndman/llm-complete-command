@@ -103,3 +103,22 @@ def test_load_effective_environment_merges_detected_and_override(monkeypatch):
         "rg": {"available": True},
         "fd": {"available": True},
     }
+
+
+def test_safe_probe_only_falls_back_for_environment_errors():
+    fallback = {"status": "unknown"}
+
+    def raise_os_error() -> dict[str, str]:
+        raise OSError("probe unavailable")
+
+    assert environment_config._safe_probe(raise_os_error, fallback) is fallback
+
+    def raise_programming_error() -> dict[str, str]:
+        raise RuntimeError("probe bug")
+
+    try:
+        environment_config._safe_probe(raise_programming_error, fallback)
+    except RuntimeError as error:
+        assert str(error) == "probe bug"
+    else:
+        raise AssertionError("Expected RuntimeError")
