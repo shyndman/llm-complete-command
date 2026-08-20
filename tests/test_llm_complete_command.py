@@ -2,7 +2,6 @@ import re
 
 import llm_complete_command as plugin
 
-
 ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[[0-9;]*m")
 
 

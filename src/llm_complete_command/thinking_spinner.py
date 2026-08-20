@@ -7,7 +7,6 @@ import time
 
 from yaspin import yaspin
 
-
 SPINNER_REFRESH_SECONDS = 0.1
 ELAPSED_TIME_FIELD_WIDTH = 5
 ELAPSED_COLOR_TRANSITION_SECONDS = 45.0

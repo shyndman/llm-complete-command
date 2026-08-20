@@ -1,7 +1,6 @@
 import re
 
-import llm_complete_command.thinking_spinner as thinking_spinner
-
+from llm_complete_command import thinking_spinner
 
 ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[[0-9;]*m")
 OSC66_PATTERN = re.compile(r"\x1b]66;[^;]*;([^\x07]*)\x07")

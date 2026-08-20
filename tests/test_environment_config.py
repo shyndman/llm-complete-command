@@ -1,4 +1,4 @@
-import llm_complete_command.environment_config as environment_config
+from llm_complete_command import environment_config
 
 
 def test_deep_merge_dicts_merges_nested_objects_without_mutating_inputs():

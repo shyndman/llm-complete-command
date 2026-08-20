@@ -9,7 +9,6 @@ from typing import Any
 import yaml
 from platformdirs import user_config_dir
 
-
 APP_NAME = "llm-complete-command"
 UNKNOWN_VALUE = "unknown"
 DETECTED_CONFIG_FILE_NAME = "config.detected.yaml"

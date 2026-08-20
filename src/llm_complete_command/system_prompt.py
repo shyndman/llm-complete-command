@@ -1,6 +1,5 @@
 from typing import Any
 
-
 UNKNOWN_VALUE = "unknown"
 PROBED_TOOLS = ("rg", "fd", "choose", "eza", "procs", "jq", "yq")
 ADDITIONAL_DETAILS_KEY = "additional_details"

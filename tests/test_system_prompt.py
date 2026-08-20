@@ -1,4 +1,4 @@
-import llm_complete_command.system_prompt as system_prompt
+from llm_complete_command import system_prompt
 
 
 def test_format_tool_lines_outputs_each_expected_tool_in_order():

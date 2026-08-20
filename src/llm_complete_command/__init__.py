@@ -1,17 +1,17 @@
-from typing import Callable
+from collections.abc import Callable
 
 import better_exceptions
 import click
 import llm
-from .environment_config import load_effective_environment
 from loguru import logger
 from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.input import create_input
 from prompt_toolkit.output import create_output
+
+from .environment_config import load_effective_environment
 from .system_prompt import build_system_prompt
 from .thinking_spinner import ThinkingSpinner
-
 
 better_exceptions.MAX_LENGTH = None
 
