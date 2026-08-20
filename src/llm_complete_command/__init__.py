@@ -157,3 +157,4 @@ def interactive_exec(conversation, prompt, system):
         print(generated_command)
     except Exception:
         logger.exception("an error occurred during processing")
+        raise

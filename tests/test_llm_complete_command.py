@@ -164,3 +164,28 @@ def test_generate_command_text_reraises_original_error_when_no_retry(monkeypatch
         raise AssertionError("Expected SomeStreamError")
 
     assert len(conversation.prompt_calls) == 1
+
+
+def test_interactive_exec_reraises_processing_errors(monkeypatch):
+    class ProcessingError(Exception):
+        pass
+
+    class FakeOutput:
+        def write(self, _text: str) -> None:
+            pass
+
+    monkeypatch.setattr(plugin, "create_input", lambda **_kwargs: None)
+    monkeypatch.setattr(plugin, "create_output", lambda **_kwargs: FakeOutput())
+    monkeypatch.setattr(plugin, "PromptSession", lambda **_kwargs: None)
+    monkeypatch.setattr(
+        plugin,
+        "_generate_command_text",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(ProcessingError("boom")),
+    )
+
+    try:
+        plugin.interactive_exec(_FakeConversation(), "prompt", "system")
+    except ProcessingError as error:
+        assert str(error) == "boom"
+    else:
+        raise AssertionError("Expected ProcessingError")
