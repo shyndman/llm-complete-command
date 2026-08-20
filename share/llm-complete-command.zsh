@@ -8,7 +8,7 @@ __llm_complete_command() {
   if [[ -n ${old_cmd//[[:space:]]/} ]]; then
     print -sr -- "$old_cmd"
   fi
-  local result=$(llm complete_command "$old_cmd")
+  local result=$(llm complete "$old_cmd")
   if [ $? -eq 0 ] && [ ! -z "$result" ]; then
     BUFFER=$result
   else

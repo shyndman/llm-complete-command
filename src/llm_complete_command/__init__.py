@@ -5,7 +5,6 @@ import click
 import llm
 from .environment_config import load_effective_environment
 from loguru import logger
-from .model_capabilities_cache import get_model_capability, set_model_capability
 from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.input import create_input
@@ -16,10 +15,6 @@ from .thinking_spinner import ThinkingSpinner
 
 better_exceptions.MAX_LENGTH = None
 
-DEFAULT_TEMPERATURE = 0.25
-TEMPERATURE_PARAM = "temperature"
-UNSUPPORTED_VALUE_CODE = "unsupported_value"
-SUPPORTS_TEMPERATURE_CAPABILITY = "supports_temperature"
 ANSI_RESET = "\x1b[0m"
 COMMAND_PROMPT_COLOR_HEX = "#31748f"
 FEEDBACK_PROMPT_COLOR_HEX = "#73628a"
@@ -92,22 +87,6 @@ def render_default_prompt():
     return build_system_prompt(environment)
 
 
-def _is_unsupported_temperature_error(error: Exception) -> bool:
-    return (
-        getattr(error, "param", None) == TEMPERATURE_PARAM
-        and getattr(error, "code", None) == UNSUPPORTED_VALUE_CODE
-    )
-
-
-def _prompt_with_temperature(
-    conversation, prompt: str, system: str, use_temperature: bool
-):
-    prompt_kwargs: dict[str, object] = {"system": system}
-    if use_temperature:
-        prompt_kwargs[TEMPERATURE_PARAM] = DEFAULT_TEMPERATURE
-    return conversation.prompt(prompt, **prompt_kwargs)
-
-
 def _collect_response_text(
     response,
     write_chunk: Callable[[str], None],
@@ -129,16 +108,6 @@ def _collect_response_text(
     return "".join(chunks)
 
 
-def _should_retry_without_temperature(
-    stream_error: ResponseStreamError, use_temperature: bool
-) -> bool:
-    return (
-        use_temperature
-        and stream_error.emitted_chunks == 0
-        and _is_unsupported_temperature_error(stream_error.original)
-    )
-
-
 def _collect_with_spinner(conversation, response, write_chunk) -> str:
     spinner = ThinkingSpinner(conversation.model.model_id)
     spinner.start()
@@ -152,32 +121,12 @@ def _collect_with_spinner(conversation, response, write_chunk) -> str:
 
 
 def _generate_command_text(conversation, prompt: str, system: str, write_chunk) -> str:
-    model_id = conversation.model.model_id
-    supports_temperature = get_model_capability(
-        model_id, SUPPORTS_TEMPERATURE_CAPABILITY
-    )
-    use_temperature = supports_temperature is not False
-
-    response = _prompt_with_temperature(
-        conversation, prompt, system, use_temperature=use_temperature
-    )
+    response = conversation.prompt(prompt, system=system)
 
     try:
-        generated_text = _collect_with_spinner(conversation, response, write_chunk)
+        return _collect_with_spinner(conversation, response, write_chunk)
     except ResponseStreamError as stream_error:
-        if _should_retry_without_temperature(stream_error, use_temperature):
-            set_model_capability(model_id, SUPPORTS_TEMPERATURE_CAPABILITY, False)
-            response = _prompt_with_temperature(
-                conversation, prompt, system, use_temperature=False
-            )
-            return _collect_with_spinner(conversation, response, write_chunk)
-
         raise stream_error.original from stream_error.original
-
-    if use_temperature and supports_temperature is None:
-        set_model_capability(model_id, SUPPORTS_TEMPERATURE_CAPABILITY, True)
-
-    return generated_text
 
 
 def interactive_exec(conversation, prompt, system):

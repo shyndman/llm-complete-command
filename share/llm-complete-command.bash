@@ -11,7 +11,7 @@ __llm_complete_command() {
     echo
 
     # Get the LLM completion
-    if result="$(llm complete_command "${old_cmd}")"; then
+    if result="$(llm complete "${old_cmd}")"; then
         # Replace the command line with the result
         READLINE_LINE="${result}"
         READLINE_POINT="${#result}"

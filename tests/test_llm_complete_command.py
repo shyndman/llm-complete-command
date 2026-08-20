@@ -116,16 +116,9 @@ def test_collect_response_text_wraps_stream_errors_with_chunk_count():
         raise AssertionError("Expected ResponseStreamError")
 
 
-def test_generate_command_text_marks_temperature_capability_supported(monkeypatch):
+def test_generate_command_text_uses_system_prompt_without_model_options(monkeypatch):
     conversation = _FakeConversation("model-alpha")
-    set_calls: list[tuple[str, str, bool]] = []
 
-    monkeypatch.setattr(plugin, "get_model_capability", lambda _model, _cap: None)
-    monkeypatch.setattr(
-        plugin,
-        "set_model_capability",
-        lambda model, capability, value: set_calls.append((model, capability, value)),
-    )
     monkeypatch.setattr(
         plugin,
         "_collect_with_spinner",
@@ -140,67 +133,8 @@ def test_generate_command_text_marks_temperature_capability_supported(monkeypatc
     )
 
     assert output == "ls -la"
-    assert len(conversation.prompt_calls) == 1
-    prompt, kwargs = conversation.prompt_calls[0]
-    assert prompt == "list files"
-    assert kwargs == {
-        "system": "system prompt",
-        "temperature": plugin.DEFAULT_TEMPERATURE,
-    }
-    assert set_calls == [
-        ("model-alpha", plugin.SUPPORTS_TEMPERATURE_CAPABILITY, True),
-    ]
-
-
-def test_generate_command_text_retries_without_temperature_when_unsupported(
-    monkeypatch,
-):
-    class UnsupportedTemperatureError(Exception):
-        def __init__(self):
-            super().__init__("temperature unsupported")
-            self.param = plugin.TEMPERATURE_PARAM
-            self.code = plugin.UNSUPPORTED_VALUE_CODE
-
-    conversation = _FakeConversation("model-beta")
-    conversation.queue_response("first response")
-    conversation.queue_response("second response")
-
-    set_calls: list[tuple[str, str, bool]] = []
-    spinner_calls = {"count": 0}
-
-    monkeypatch.setattr(plugin, "get_model_capability", lambda _model, _cap: True)
-    monkeypatch.setattr(
-        plugin,
-        "set_model_capability",
-        lambda model, capability, value: set_calls.append((model, capability, value)),
-    )
-
-    def fake_collect_with_spinner(_conversation, _response, _write_chunk):
-        if spinner_calls["count"] == 0:
-            spinner_calls["count"] += 1
-            raise plugin.ResponseStreamError(
-                UnsupportedTemperatureError(), emitted_chunks=0
-            )
-        return "retry-success"
-
-    monkeypatch.setattr(plugin, "_collect_with_spinner", fake_collect_with_spinner)
-
-    output = plugin._generate_command_text(
-        conversation,
-        prompt="do something",
-        system="system prompt",
-        write_chunk=lambda _chunk: None,
-    )
-
-    assert output == "retry-success"
-    assert len(conversation.prompt_calls) == 2
-    assert conversation.prompt_calls[0][1] == {
-        "system": "system prompt",
-        "temperature": plugin.DEFAULT_TEMPERATURE,
-    }
-    assert conversation.prompt_calls[1][1] == {"system": "system prompt"}
-    assert set_calls == [
-        ("model-beta", plugin.SUPPORTS_TEMPERATURE_CAPABILITY, False),
+    assert conversation.prompt_calls == [
+        ("list files", {"system": "system prompt"}),
     ]
 
 
@@ -210,7 +144,6 @@ def test_generate_command_text_reraises_original_error_when_no_retry(monkeypatch
     class SomeStreamError(Exception):
         pass
 
-    monkeypatch.setattr(plugin, "get_model_capability", lambda _model, _cap: True)
     monkeypatch.setattr(
         plugin,
         "_collect_with_spinner",
